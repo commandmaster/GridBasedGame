@@ -22,7 +22,9 @@ const sketch = function(p5) {
     grid1 = new Grid(p5, 65, 65);
     p5.background(255);
     p5.noStroke();
+    p5.frameRate(1);
   }
+
 
   p5.draw = () => {
     p5.noStroke();
