@@ -3,8 +3,14 @@ let grid1;
 let networkManager;
 
 class NetworkManager{
-    constructor(){
+    constructor(p5){
+      this.p5 = p5;
       this.socket = io.connect('http://localhost:3000');
+      this.client = new Client(p5, this.socket);
+
+      this.socket.on('serverStartUp', (data) => {
+        location.reload();
+      });
     }
 
     Update(){
@@ -18,11 +24,11 @@ class NetworkManager{
 const sketch = function(p5) {
   p5.setup = () => {
     p5.createCanvas(p5.windowWidth, p5.windowHeight);
-    networkManager = new NetworkManager();
-    grid1 = new Grid(p5, 65, 65);
+    networkManager = new NetworkManager(p5);
+    grid1 = new Grid(p5, 175, 175);
     p5.background(255);
     p5.noStroke();
-    p5.frameRate(1);
+
   }
 
 
@@ -48,14 +54,14 @@ class Grid{
     this.rows = rows;
     this.cols = cols;
 
-    this.defaultSize = 10;
+    this.defaultSize = 5;
 
 
     this.grid = [];
     this.positionType ='middle';
     this.#initGrid();
 
-    this.p5.frameRate(20);
+    this.p5.frameRate(60);
     
   }
 
@@ -159,6 +165,27 @@ class Cell{
     this.p5.fill(this.live ? 0 : 255);
     this.p5.rect(this.x, this.y, this.size, this.size);
   }
+}
+
+class Client{
+  constructor(p5, socket){
+    this.socket = socket;
+    this.id = socket.id;
+    this.name = '';
+    this.p5 = p5;
+
+    this.socket.on('setName', (name) => {
+      this.name = name;
+      console.log('name set to', `"${name}"`);
+    });
+  }
+
+  Update(){
+    
+  }
+
+
+
 }
 
 

@@ -42,6 +42,12 @@ class ServerNetworkManager{
     constructor(io){
         this.io = io;
 
+        setTimeout(() => {
+            // Reset all already connected clients
+            this.io.sockets.emit('serverStartUp', 'reset');
+        }, 1000);
+
+
         this.clients = {};
         this.rooms = {};
 
@@ -89,6 +95,9 @@ class BackendClient{
         this.id = id;
         this.socket = socket;
         this.room = room;
+
+        this.name = 'player ' + crypto.randomUUID();
+        this.socket.emit('setName', this.name);
     }
 }
 
