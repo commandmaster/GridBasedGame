@@ -1,6 +1,8 @@
 
 let grid1;
+let chatWindow;
 let networkManager;
+let camera;
 
 class NetworkManager{
     constructor(p5){
@@ -11,10 +13,14 @@ class NetworkManager{
       this.socket.on('serverStartUp', (data) => {
         location.reload();
       });
+
+      this.socket.on('ping', (data, callback) => {
+        callback('pong');
+      });
     }
 
     Update(){
-      
+      this.client.Update();
     }
 }
 
@@ -24,19 +30,27 @@ class NetworkManager{
 const sketch = function(p5) {
   p5.setup = () => {
     p5.createCanvas(p5.windowWidth, p5.windowHeight);
-    networkManager = new NetworkManager(p5);
-    grid1 = new Grid(p5, 175, 175);
-    p5.background(255);
-    p5.noStroke();
 
+    camera = new Camera(p5);
+    networkManager = new NetworkManager(p5);
+
+    grid1 = new Grid(p5, networkManager);
+
+    const windowX = p5.windowWidth - 300;
+    const windowY = 30;
+    chatWindow = new ChatBox(p5, windowX, windowY, 300, p5.windowHeight - windowY);
+    
   }
 
 
   p5.draw = () => {
     p5.noStroke();
     p5.background(255);
+    chatWindow.Update();
+    camera.Update();
     networkManager.Update();
     grid1.Update();
+    
   }
 
   p5.mouseWheel = (event) => {
@@ -47,125 +61,34 @@ const sketch = function(p5) {
 }
 
 
-
 class Grid{
-  constructor(p5, rows, cols){
+  constructor(p5, networkManager){
     this.p5 = p5;
-    this.rows = rows;
-    this.cols = cols;
-
-    this.defaultSize = 5;
+    this.networkManager = networkManager;
 
 
     this.grid = [];
-    this.positionType ='middle';
-    this.#initGrid();
-
-    this.p5.frameRate(60);
     
-  }
+    this.networkManager.client.socket.on('gameUpdate', (data) => {
+      this.grid = data;
+    });
 
-  #initGrid(){
-    for (let i = 0; i < this.rows; i++){
-      this.grid.push([]);
-      for (let j = 0; j < this.cols; j++){
-        this.grid[i].push(new Cell(this.p5, i, j, this.defaultSize));
-        this.grid[i][j].live = Math.random() > 0.5 ? true : false;
-
-      }
-    }
-    
-
-    // this.grid[9][10].live = true;
-    // this.grid[10][10].live = true;
-    // this.grid[11][10].live = true;
-    // this.grid[9][11].live = true;
-
-    // this.grid[10][12].live = true;  
-  }
-
-
-
-  #conwayRules(){
-    const newGrid = [];
-    for (let i = 0; i < this.rows; i++){
-      newGrid.push([]);
-      for (let j = 0; j < this.cols; j++){
-        let liveNeighbors = 0;
-        
-        for (let x = -1; x < 2; x++){
-          for (let y = -1; y < 2; y++){
-            if (i + x >= 0 && i + x < this.rows && j + y >= 0 && j + y < this.cols){
-              if (this.grid[i + x][j + y].live){
-                liveNeighbors++;
-              }
-            }
-          }
-        }
-
-        // Subtract the cell itself
-        if (this.grid[i][j].live){
-          liveNeighbors--;
-        }
-        
-        const cell = new Cell(this.p5, i, j, this.defaultSize);
-        cell.live = this.grid[i][j].live;
-        if (this.grid[i][j].live){
-          if (liveNeighbors < 2 || liveNeighbors > 3){
-            cell.live = false;
-          }
-        } 
-        else {
-          if (liveNeighbors === 3){
-            cell.live = true;
-          }
-
-          else{
-            cell.live = false;
-          }
-        }
-
-        newGrid[i].push(cell);
-      }
-    }
-    this.grid = newGrid;
   }
 
   Update(){
-    for (let i = 0; i < this.rows; i++){
-      for (let j = 0; j < this.cols; j++){
-        this.grid[i][j].Show();
+    this.p5.push();
+    for (let i = 0; i < this.grid.length; i++){
+      for (let j = 0; j < this.grid[i].length; j++){
+        const cell = this.grid[i][j];
+        this.p5.fill(cell.live ? 0 : 255);
+        this.p5.rect(cell.x, cell.y, cell.size, cell.size);
       }
     }
-
-    this.#conwayRules();
-
+    this.p5.pop();
   }
-
-
+  
 }
 
-
-class Cell{
-  constructor(p5, i, j, size){
-    this.p5 = p5;
-    this.i = i;
-    this.j = j;
-    this.size = size;
-    this.x = this.i * this.size;
-    this.y = this.j * this.size;
-    this.live = false;
-  }
-
-  Show(){
-
-    this.x = Math.floor(this.x);
-    this.y = Math.floor(this.y);
-
-    this.p5.fill(this.live ? 0 : 255);
-    this.p5.rect(this.x, this.y, this.size, this.size);
-  }
-}
 
 class Client{
   constructor(p5, socket){
@@ -177,11 +100,382 @@ class Client{
     this.socket.on('setName', (name) => {
       this.name = name;
       console.log('name set to', `"${name}"`);
+
+
+      if (this.nameButton){
+        this.nameButton.value(this.name);
+      }
+
+      else{
+        this.nameButton = this.p5.createInput(this.name);
+        this.nameButton.value(this.name);
+
+        this.nameButton.style('font-size', '20px');
+        this.nameButton.style('position', 'absolute');
+        this.nameButton.style('top', '0px');
+        this.nameButton.style('right', '0px');
+        this.nameButton.style('background', 'transparent');
+        this.nameButton.style('border', 'none');
+        this.nameButton.style('color', 'black');
+        this.nameButton.style('z-index', '100');
+
+        this.nameButton.position(this.p5.windowWidth - 300, 0)
+
+        this.nameButton.changed(() => {
+          this.name = this.nameButton.value();
+          this.socket.emit('setName', this.name);
+        });
+      }
+
+      
+      
+    });
+
+    
+  }
+
+  Update(){
+    // show player list on tab press
+    if (this.p5.keyIsDown(71)){
+      this.socket.emit('getPlayerList', '', (data) => {
+        const playerNames = data.players;
+        const pings = data.pings;
+
+        if (this.playerListWindow){
+          this.playerListWindow.remove();
+        }
+
+        this.playerListWindow = this.p5.createDiv();
+        this.playerListWindow.size(600, 400);
+        this.playerListWindow.position(this.p5.windowWidth/2 - 300, 30);
+        this.playerListWindow.style('background', '#f0f0f0');
+        this.playerListWindow.style('border', 'none');
+        this.playerListWindow.style('overflow-y', 'hidden');
+        this.playerListWindow.style('overflow-x', 'hidden');
+        this.playerListWindow.style('z-index', '100');
+        this.playerListWindow.style('padding', '10px');
+        this.playerListWindow.style('font-size', '20px');
+        this.playerListWindow.style('position', 'absolute');
+
+
+        for (let i = 0; i < playerNames.length; i++){
+          
+          const text = playerNames[i] + " - " + pings[i].toFixed(2) + "ms";
+          let player = this.p5.createP(text);
+          player.style('font-size', '20px');
+          player.style('font-family', 'Arial');
+          
+          player.style('color', playerNames[i] === this.name ? 'blue' : 'black');
+
+          player.style('margin', '10px');
+          this.playerListWindow.child(player);
+        }
+          
+      });
+    }
+
+    else if (this.playerListWindow){
+      this.playerListWindow.remove();
+    }
+  }
+
+}
+
+class ChatBox{
+  constructor(p5, x, y, w, h){
+    this.p5 = p5;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.messages = [];
+
+    this.isVisibile = true;
+
+    this.maxMessagesOnScreen = 12;
+
+    this.hideChatButton = this.p5.createButton('Hide Chat');
+    this.hideChatButton.size(100, 20);
+    this.hideChatButton.position(this.x + 10, this.y + this.h - 60);
+    this.hideChatButton.mousePressed(() => {
+      this.hidden = !this.hidden;
+      this.hideChatButton.html(this.hidden ? 'Hide Chat': 'Show Chat');
+    });
+
+    
+    this.inputBox = this.p5.createInput();
+    this.inputBox.position(this.x + 10, this.y + this.h - 30);
+    this.inputBox.size(this.w - 20, 20);
+    this.inputBox.style('font-size', '20px');
+    this.inputBox.style('position', 'absolute');
+    this.inputBox.style('bottom', '0px');
+    this.inputBox.style('background', 'transparent');
+    this.inputBox.style('border', '1px solid black');
+    this.inputBox.style('color', 'black');
+    this.inputBox.style('z-index', '100');
+
+    networkManager.client.socket.on('chatMessage', (message) => {
+      console.log('new chat', message);
+
+      // add newline characters to the message if it is too long
+      for (let j = 0; j < message.message.length; j++){
+        if (j === 0){
+          message.message = '\n' + message.message;
+          continue;
+        }
+
+        if (j % 30 === 0){
+          if (message.message[j] !== ' '){
+            for (let k = j; k > 0; k--){
+              if (message.message[k] === ' '){
+                message.message = message.message.substring(0, k) + '\n' + message.message.substring(k, message.message.length);
+                break;
+              }
+            }
+          }
+          else{
+            message.message = message.message.substring(0, j) + '\n' + message.message.substring(j, message.message.length);
+          }
+         
+        }
+      }
+
+      this.AddMessage(message);
+    });
+
+  }
+
+  AddMessage(message){
+    this.messages.push(message);
+  }
+
+  SetMessages(messages){
+    this.messages = messages;
+  }
+
+  Show(){
+    if (!this.isVisibile){
+      return;
+    }
+    
+    const transparentColor = this.p5.color(210, 210, 210, 200);
+
+    this.p5.fill(transparentColor);
+    this.p5.rect(this.x, this.y, this.w, this.h);
+
+    let yCounter = this.y + 20;
+    for (let i = this.messages.length - this.maxMessagesOnScreen; i < this.messages.length; i++){
+      if (i < 0){
+        continue;
+      }
+
+      const bottomMargin = 75;
+      if (yCounter > this.h - bottomMargin){
+        this.messages.shift();
+        continue;
+      }
+
+      this.p5.textSize(20);
+      this.p5.fill(0);
+
+      const maxLength = 25;
+      let name = this.messages[i].name.length > maxLength ? this.messages[i].name.substring(0, maxLength) : this.messages[i].name;
+
+      const splitText = this.messages[i].message.split(/\n/g);
+
+      this.p5.push();
+
+      this.p5.textFont('Arial');
+      if (this.messages[i].name === "Server"){
+        this.p5.textStyle(this.p5.BOLD);
+        this.p5.fill("red");
+        name = "SERVER"
+      }
+
+      else{
+        this.p5.fill(this.messages[i].name === networkManager.client.name ? "blue" : "red");
+      }
+
+      this.p5.text(`${name}:`, this.x + 5, yCounter);
+
+      this.p5.textStyle(this.p5.NORMAL);
+      this.p5.fill(this.messages[i].name === "Server" ? "red": "black");
+      for (let j = 0; j < splitText.length; j++){
+        this.p5.text(`${splitText[j]}`, this.x + 5, yCounter);
+        yCounter += 25;
+      }
+
+      this.p5.pop();
+
+  
+      yCounter += 10;
+    }
+  }
+
+  Update(){
+    this.Show();
+    this.inputBox.changed(() => {
+      networkManager.client.socket.emit('chatMessage', this.inputBox.value());
+      this.inputBox.value('');
+    });
+  }
+
+  set hidden(isHidden){
+    this.isVisibile = isHidden;
+    if (this.isVisibile){
+      this.inputBox.show();
+    }
+
+    else{
+      this.inputBox.hide()
+    }
+    
+  }
+
+  get hidden(){
+    return this.isVisibile;
+  }
+}
+
+class Camera{
+  constructor(p5){
+    this.p5 = p5;
+    this.x = 0;
+    this.y = 0;
+    this.zoom = 1;
+
+    this.controls = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+      zoomIn: false,
+      zoomOut: false
+    }
+
+    window.addEventListener('keydown', (event) => {
+      switch(event.key){
+        case 'w':
+          this.controls.up = true;
+          break;
+        case 's':
+          this.controls.down = true;
+          break;
+        case 'a':
+          this.controls.left = true;
+          break;
+        case 'd':
+          this.controls.right = true;
+          break;
+        case 'q':
+          this.controls.zoomOut = true;
+          break;
+        case 'e':
+          this.controls.zoomIn = true;
+          break;
+      }
+    });
+
+    window.addEventListener('keyup', (event) => {
+      switch(event.key){
+        case 'w':
+          this.controls.up = false;
+          break;
+        case 's':
+          this.controls.down = false;
+          break;
+        case 'a':
+          this.controls.left = false;
+          break;
+        case 'd':
+          this.controls.right = false;
+          break;
+        case 'q':
+          this.controls.zoomOut = false;
+          break;
+        case 'e':
+          this.controls.zoomIn = false;
+          break;
+      }
+    });
+
+
+    window.addEventListener('mousedown', (event) => {
+      if (event.button === 2){
+        // add pointer lock 
+        document.body.requestPointerLock();
+        this.dragging = true;
+      }
+
+    });
+
+    window.addEventListener('mouseup', (event) => {
+      if (event.button === 2){
+        // remove pointer lock
+        document.exitPointerLock();
+        this.dragging = false;
+      }
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (this.dragging){
+        this.x -= event.movementX;
+        this.y -= event.movementY;
+      }
+    });
+
+
+    window.addEventListener('wheel', (event) => {
+      this.zoom -= event.delta / 1000;
     });
   }
 
   Update(){
+    //Controls for the camera
+    if (this.controls.up){
+      this.y += 5;
+    }
+
+    if (this.controls.down){
+      this.y -= 5;
+    }
+
+    if (this.controls.left){
+      this.x += 5;
+    }
+
+    if (this.controls.right){
+      this.x -= 5;
+    }
+
+    if (this.controls.zoomIn){
+      this.zoom += 0.01;
+    }
+
+    if (this.controls.zoomOut){
+      this.zoom -= 0.01;
+    }
+
+    this.p5.translate(this.p5.width/2, this.p5.height/2);
+    this.p5.scale(this.zoom);
+    this.p5.translate(-this.p5.width/2, -this.p5.height/2);
     
+
+    this.p5.translate(this.x, this.y);
+  }
+
+  screenToWorld(x, y){
+    return this.p5.createVector((x - this.x) / this.zoom, (y - this.y) / this.zoom);
+  }
+
+  worldToScreen(x, y){
+    const vector = this.p5.createVector(x * this.zoom + this.x, y * this.zoom + this.y);
+
+    //clamp the vector to the screen
+    vector.x = this.p5.constrain(vector.x, 0, this.p5.width);
+    vector.y = this.p5.constrain(vector.y, 0, this.p5.height);
+
+    return vector;
   }
 
 
