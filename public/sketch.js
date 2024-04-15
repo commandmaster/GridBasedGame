@@ -438,29 +438,34 @@ class Camera{
   Update(){
     this.p5.push();
     //Controls for the camera
-    if (this.controls.up){
-      this.y += 5;
-    }
+    if (this.dragging){
+      if (this.controls.up){
+        this.y += 5;
+      }
+  
+      if (this.controls.down){
+        this.y -= 5;
+      }
+  
+      if (this.controls.left){
+        this.x += 5;
+      }
+  
+      if (this.controls.right){
+        this.x -= 5;
+      }
 
-    if (this.controls.down){
-      this.y -= 5;
-    }
+      
+      if (this.controls.zoomIn){
+        this.zoom += 0.01;
+      }
 
-    if (this.controls.left){
-      this.x += 5;
+      if (this.controls.zoomOut){
+        this.zoom -= 0.01;
+      }
     }
+   
 
-    if (this.controls.right){
-      this.x -= 5;
-    }
-
-    if (this.controls.zoomIn){
-      this.zoom += 0.01;
-    }
-
-    if (this.controls.zoomOut){
-      this.zoom -= 0.01;
-    }
 
     this.zoom = this.p5.constrain(this.zoom, 0.1, 10);
 
