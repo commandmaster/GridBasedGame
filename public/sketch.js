@@ -501,6 +501,20 @@ class Camera{
 }
 
 
+class GpuAccelleratedGrid{
+  constructor(p5){
+    this.p5 = p5;
+    this.gpu = new GPU();
+
+  }
+
+  Update(){
+    this.p5.push();
+    this.p5.pop();
+  }
+}
+
+
 window.addEventListener('load', () => {
   let gameWindowSketch = new p5(sketch);
 });
