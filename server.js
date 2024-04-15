@@ -94,8 +94,25 @@ class ServerNetworkManager{
     disconnection(socket){
         console.log('Disconnected', socket.id);
 
+
         const room = this.clients[socket.id].room;
+
+        const chatHistory = room.chat.messageTrackers[socket.id].chatHistory;
         this.rooms[room.id].RemoveClient(this.clients[socket.id]);
+
+        //save chat history to txt file
+
+        // format chat history
+        let chatString = '';
+        chatHistory.forEach((chat) => {
+            chatString += `${((chat.time)/1000).toFixed(2)}s - ${chat.name} (${chat.id}): "${chat.message}"\n`;
+        });
+        fs.appendFile(path.join(__dirname, 'contentModeration/userChatHistory.txt'), chatString, (err) => {
+            if (err){
+                console.error(err);
+                return;
+            }
+        });
 
         delete this.clients[socket.id];
     }
@@ -272,9 +289,7 @@ class ChatTracker{
                 return;
             }
     
-            this.chatHistory.push({message, time: performance.now()});
-    
-            
+            this.chatHistory.push({id:this.id, name:this.name, message, time: performance.now()});
     
             this.lastChatTime = performance.now();
             this.chats[this.lastChatTime] = message;
