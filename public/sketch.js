@@ -46,10 +46,14 @@ const sketch = function(p5) {
   p5.draw = () => {
     p5.noStroke();
     p5.background(255);
-    chatWindow.Update();
     camera.Update();
     networkManager.Update();
     grid1.Update();
+    
+    camera.endCamera();
+    chatWindow.Update();
+   
+    
     
   }
 
@@ -148,7 +152,6 @@ class Client{
         this.playerListWindow = this.p5.createDiv();
         this.playerListWindow.size(600, 400);
         this.playerListWindow.position(this.p5.windowWidth/2 - 300, 30);
-        this.playerListWindow.style('background', '#f0f0f0');
         this.playerListWindow.style('border', 'none');
         this.playerListWindow.style('overflow-y', 'hidden');
         this.playerListWindow.style('overflow-x', 'hidden');
@@ -156,6 +159,8 @@ class Client{
         this.playerListWindow.style('padding', '10px');
         this.playerListWindow.style('font-size', '20px');
         this.playerListWindow.style('position', 'absolute');
+        
+        this.playerListWindow.style('background', 'rgba(240, 240, 240, 0.7)');
 
 
         for (let i = 0; i < playerNames.length; i++){
@@ -258,7 +263,7 @@ class ChatBox{
       return;
     }
     
-    const transparentColor = this.p5.color(210, 210, 210, 200);
+    const transparentColor = this.p5.color(240, 240, 240, 200);
 
     this.p5.fill(transparentColor);
     this.p5.rect(this.x, this.y, this.w, this.h);
@@ -431,6 +436,7 @@ class Camera{
   }
 
   Update(){
+    this.p5.push();
     //Controls for the camera
     if (this.controls.up){
       this.y += 5;
@@ -479,6 +485,9 @@ class Camera{
   }
 
 
+  endCamera(){
+    this.p5.pop();
+  }
 
 }
 
