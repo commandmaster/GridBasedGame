@@ -462,12 +462,16 @@ class Camera{
       this.zoom -= 0.01;
     }
 
+    this.zoom = this.p5.constrain(this.zoom, 0.1, 10);
+
     this.p5.translate(this.p5.width/2, this.p5.height/2);
     this.p5.scale(this.zoom);
     this.p5.translate(-this.p5.width/2, -this.p5.height/2);
     
+    // orgin is center of screen
 
-    this.p5.translate(this.x, this.y);
+    this.offset = this.p5.createVector(0, 0);
+    this.p5.translate(this.x + this.p5.width/2 + this.offset.x, this.y + this.p5.height/2 + this.offset.y);
   }
 
   screenToWorld(x, y){

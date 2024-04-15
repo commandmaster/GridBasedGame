@@ -113,7 +113,11 @@ class BackendClient{
         this.socket = socket;
         this.room = room;
 
+        this.maxNameLength = 25;
+
         this.name = 'Player_' + crypto.randomUUID();
+        this.name.length > this.maxNameLength ? this.name = this.name.substring(0, this.maxNameLength) : this.name = this.name;
+
         this.socket.emit('setName', this.name);
 
         this.socket.on('setName', (name) => {
@@ -121,7 +125,7 @@ class BackendClient{
             const names = Object.values(this.room.clients).map((client) => client.name);
 
             name = name.trim();
-            if (name.length > 0 && !names.includes(name) && name !== 'Server'){
+            if (name.length > 0 && !names.includes(name) && name !== 'Server' && name.length <= this.maxNameLength){
                 this.name = name;
             }
 
@@ -134,6 +138,8 @@ class BackendClient{
                 this.name = newName;
                 this.socket.emit('setName', this.name);
             }
+
+
         });
 
         this.ping = 0;
