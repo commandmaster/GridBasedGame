@@ -607,13 +607,13 @@ function newGeneration(grid, width, height){
 
 
       // draw grid
-      // const size = 1;
-      // for (let i = 0; i < newGrid.length; i++){
-      //   for (let j = 0; j < newGrid[i].length; j++){
-      //     p5.fill(newGrid[i][j] === 1 ? 0 : 255);
-      //     p5.rect(i * size, j * size, size, size);
-      //   }
-      // }
+      const size = 1;
+      for (let i = 0; i < newGrid.length; i++){
+        for (let j = 0; j < newGrid[i].length; j++){
+          p5.fill(newGrid[i][j] === 1 ? 0 : 255);
+          p5.rect(i * size, j * size, size, size);
+        }
+      }
 
       console.log(p5.frameRate());
       oldGrid = newGrid;
