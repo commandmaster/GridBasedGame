@@ -4,6 +4,7 @@ let chatWindow;
 let networkManager;
 let camera;
 
+
 class NetworkManager{
     constructor(p5){
       this.p5 = p5;
@@ -515,6 +516,109 @@ class GpuAccelleratedGrid{
 }
 
 
-window.addEventListener('load', () => {
-  let gameWindowSketch = new p5(sketch);
-});
+
+
+// window.addEventListener('load', () => {
+//   let gameWindowSketch = new p5(sketch);
+// });
+
+
+
+
+
+
+const gpu = new GPU.GPU();
+
+const generateGameGrid = (width, height) => {
+  const grid = [];
+  for (let i = 0; i < height; i++){
+    grid.push([]);
+    for (let j = 0; j < width; j++){
+      grid[i].push(Math.floor(Math.random() * 2));
+    }
+  }
+
+  return grid;
+}
+
+
+
+function newGeneration(grid, width, height){
+  const gameOfLife = gpu.createKernel(function(grid, width, height) {
+    const x = this.thread.x;
+    const y = this.thread.y;
+    let numNeighbors = 0;
+  
+    for (let i = -1; i < 2; i++){
+      for (let j = -1; j < 2; j++){
+
+  
+        const neighborX = x + i;
+        const neighborY = y + j;
+  
+        if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height){
+          numNeighbors += grid[neighborY][neighborX];
+        }
+  
+      }
+    }
+  
+    
+  
+    if (grid[y][x] === 1){
+      numNeighbors -= 1;
+      if (numNeighbors < 2 || numNeighbors > 3){
+        return 0;
+      }
+  
+      return 1;
+    }
+  
+    else{
+      if (numNeighbors === 3){
+        return 1;
+      }
+  
+      return 0;
+    }
+    
+  }).setOutput([width, height]);
+  
+
+  return gameOfLife(grid, width, height);
+}
+
+
+
+
+  let oldGrid = generateGameGrid(500, 500);
+
+  let gpuSketch = function(p5){
+    p5.setup = () => {
+      p5.createCanvas(p5.windowWidth, p5.windowHeight);
+      p5.noStroke();
+      p5.frameRate(60); 
+    }
+
+    p5.draw = () => {
+      p5.background(255);
+
+      const newGrid = newGeneration(oldGrid, oldGrid[0].length, oldGrid.length);
+
+
+      // draw grid
+      // const size = 1;
+      // for (let i = 0; i < newGrid.length; i++){
+      //   for (let j = 0; j < newGrid[i].length; j++){
+      //     p5.fill(newGrid[i][j] === 1 ? 0 : 255);
+      //     p5.rect(i * size, j * size, size, size);
+      //   }
+      // }
+
+      console.log(p5.frameRate());
+      oldGrid = newGrid;
+    }
+  }
+
+  let gpuSketchInstance = new p5(gpuSketch);
+  
