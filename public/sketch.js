@@ -563,7 +563,6 @@ function newGeneration(grid, width, height){
       }
     }
   
-    
   
     if (grid[y][x] === 1){
       numNeighbors -= 1;
@@ -581,6 +580,8 @@ function newGeneration(grid, width, height){
   
       return 0;
     }
+
+
     
   }).setOutput([width, height]);
   
@@ -591,32 +592,85 @@ function newGeneration(grid, width, height){
 
 
 
-  let oldGrid = generateGameGrid(500, 500);
+  let oldGrid = generateGameGrid(400, 400);
+
+  let loopProgress = [0, 0]
+  let shouldBreak = false;
+  let timeout;
 
   let gpuSketch = function(p5){
     p5.setup = () => {
       p5.createCanvas(p5.windowWidth, p5.windowHeight);
       p5.noStroke();
       p5.frameRate(60); 
+      p5.background(255);
     }
 
     p5.draw = () => {
-      p5.background(255);
+      
+      const generationsPerFrame = 1;
+      let newGrid;
+      for (let i = 0; i < generationsPerFrame; i++){
+        try{
+          newGrid = newGeneration(oldGrid, oldGrid[0].length, oldGrid.length);
+          oldGrid = newGrid;
+        }
 
-      const newGrid = newGeneration(oldGrid, oldGrid[0].length, oldGrid.length);
+        catch(e){
+          newGrid = oldGrid;
+          console.log(e);
+        }
+        
+      }
+       
+      
 
 
-      // draw grid
-      const size = 1;
-      for (let i = 0; i < newGrid.length; i++){
-        for (let j = 0; j < newGrid[i].length; j++){
+      
+      if (!timeout){
+        timeout = setTimeout(() => {
+          shouldBreak = true;
+          
+
+          if (loopProgress[0] >= newGrid.length - 1 && loopProgress[1] >= newGrid[0].length - 1){
+            loopProgress[0] = 0;
+            loopProgress[1] = 0;
+          }
+
+          clearTimeout(timeout);
+          timeout = null;
+        }, 1000/60);
+      }
+
+      for (let i = loopProgress[0]; i < newGrid.length; i++){
+        for (let j = loopProgress[1]; j < newGrid[i].length; j++){
+          const size = 2;
+
           p5.fill(newGrid[i][j] === 1 ? 0 : 255);
           p5.rect(i * size, j * size, size, size);
+          
+
+          if (shouldBreak){
+            loopProgress[1] = j;
+            break;
+          }
+        }
+
+        if (shouldBreak){
+          loopProgress[0] = i;
+          break;
         }
       }
 
+      if (shouldBreak){
+        shouldBreak = false;
+        return;
+      }
+
+     
+      
       console.log(p5.frameRate());
-      oldGrid = newGrid;
+      
     }
   }
 
