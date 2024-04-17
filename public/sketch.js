@@ -595,7 +595,7 @@ function newGeneration(grid, width, height){
   let oldGrid = generateGameGrid(400, 400);
 
   let loopProgress = [0, 0]
-  let shouldBreak = false;
+
   let timeout;
 
   let gpuSketch = function(p5){
@@ -607,9 +607,12 @@ function newGeneration(grid, width, height){
     }
 
     p5.draw = () => {
-      
+      console.log(p5.frameRate());
+
+
       const generationsPerFrame = 1;
       let newGrid;
+
       for (let i = 0; i < generationsPerFrame; i++){
         try{
           newGrid = newGeneration(oldGrid, oldGrid[0].length, oldGrid.length);
@@ -626,50 +629,41 @@ function newGeneration(grid, width, height){
       
 
 
+    
+      const start = performance.now();
+
       
-      if (!timeout){
-        timeout = setTimeout(() => {
-          shouldBreak = true;
-          
 
-          if (loopProgress[0] >= newGrid.length - 1 && loopProgress[1] >= newGrid[0].length - 1){
-            loopProgress[0] = 0;
-            loopProgress[1] = 0;
-          }
-
-          clearTimeout(timeout);
-          timeout = null;
-        }, 1000/60);
-      }
+      
 
       for (let i = loopProgress[0]; i < newGrid.length; i++){
         for (let j = loopProgress[1]; j < newGrid[i].length; j++){
           const size = 2;
+          
+
+          if (performance.now() - start > 1000/60){
+            loopProgress = [i, j];
+            return;
+          }
 
           p5.fill(newGrid[i][j] === 1 ? 0 : 255);
           p5.rect(i * size, j * size, size, size);
           
 
-          if (shouldBreak){
-            loopProgress[1] = j;
-            break;
-          }
+          
         }
 
-        if (shouldBreak){
-          loopProgress[0] = i;
-          break;
-        }
+        loopProgress[1] = 0;
+    
       }
 
-      if (shouldBreak){
-        shouldBreak = false;
-        return;
-      }
+      loopProgress = [0, 0];
+
+      
 
      
       
-      console.log(p5.frameRate());
+      
       
     }
   }
