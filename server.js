@@ -42,6 +42,7 @@ class Room{
             });
         });
         this.chat.addClient(client);
+        this.game.setupClient(client);
     }
 
     RemoveClient(client){
@@ -189,6 +190,26 @@ class Game{
                 this.grid[i][j].live = Math.random() > 0.5;
             }
         }
+
+    
+        
+    }
+
+    setupClient(client){   
+        client.socket.on('setCell', (pos) => {
+            let x = pos[0], y = pos[1];
+            x = Math.floor(x / this.cellSize);
+            y = Math.floor(y / this.cellSize);
+
+            console.log(x, y);
+
+            if (x >= 0 && x < this.rows && y >= 0 && y < this.cols) {
+                
+                this.grid[x][y].live = true;
+            }
+            
+        
+        });
     }
 
     Update(){

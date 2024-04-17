@@ -81,6 +81,12 @@ class Grid{
   }
 
   Update(){
+    if (this.p5.mouseIsPressed && this.p5.mouseButton === this.p5.LEFT){
+      const worldPos = camera.screenToWorld(this.p5.mouseX, this.p5.mouseY);
+      console.log(worldPos.x, worldPos.y);  
+      this.networkManager.client.socket.emit('setCell', [worldPos.x, worldPos.y]);
+    }
+
     this.p5.push();
     for (let i = 0; i < this.grid.length; i++){
       for (let j = 0; j < this.grid[i].length; j++){
@@ -481,7 +487,7 @@ class Camera{
   }
 
   screenToWorld(x, y){
-    return this.p5.createVector((x - this.x) / this.zoom, (y - this.y) / this.zoom);
+    return this.p5.createVector((x - this.x - this.p5.width/2) / this.zoom, (y - this.y - this.p5.height/2) / this.zoom);
   }
 
   worldToScreen(x, y){
@@ -502,10 +508,10 @@ class Camera{
 }
 
 
-class GpuAccelleratedGrid{
+class GpuAccelleration{
   constructor(p5){
     this.p5 = p5;
-    this.gpu = new GPU();
+    this.gpu = new GPU.GPU();
 
   }
 
@@ -518,9 +524,36 @@ class GpuAccelleratedGrid{
 
 
 
-// window.addEventListener('load', () => {
-//   let gameWindowSketch = new p5(sketch);
-// });
+window.addEventListener('load', () => {
+  let gameWindowSketch = new p5(sketch);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -555,7 +588,7 @@ function newGeneration(grid, width, height){
   
         const neighborX = x + i;
         const neighborY = y + j;
-  
+        
         if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height){
           numNeighbors += grid[neighborY][neighborX];
         }
@@ -592,7 +625,7 @@ function newGeneration(grid, width, height){
 
 
 
-  let oldGrid = generateGameGrid(400, 400);
+  let oldGrid = generateGameGrid(1000, 1000);
 
   let loopProgress = [0, 0]
 
@@ -602,7 +635,7 @@ function newGeneration(grid, width, height){
     p5.setup = () => {
       p5.createCanvas(p5.windowWidth, p5.windowHeight);
       p5.noStroke();
-      p5.frameRate(60); 
+      
       p5.background(255);
     }
 
@@ -638,7 +671,7 @@ function newGeneration(grid, width, height){
 
       for (let i = loopProgress[0]; i < newGrid.length; i++){
         for (let j = loopProgress[1]; j < newGrid[i].length; j++){
-          const size = 2;
+          const size = 1;
           
 
           if (performance.now() - start > 1000/60){
@@ -668,5 +701,5 @@ function newGeneration(grid, width, height){
     }
   }
 
-  let gpuSketchInstance = new p5(gpuSketch);
+  // let gpuSketchInstance = new p5(gpuSketch);
   
