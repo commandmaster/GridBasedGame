@@ -1,5 +1,5 @@
 
-let grid1;
+let gameGrid;
 let chatWindow;
 let networkManager;
 let camera;
@@ -35,7 +35,10 @@ const sketch = function(p5) {
     camera = new Camera(p5);
     networkManager = new NetworkManager(p5);
 
-    grid1 = new Grid(p5, networkManager);
+    networkManager.client.socket.on('createGameGrid', (data) => {
+      gameGrid = new GameGrid(p5, data.width, data.height, data.cellSize);
+    });
+    
 
     const windowX = p5.windowWidth - 300;
     const windowY = 30;
@@ -49,7 +52,9 @@ const sketch = function(p5) {
     p5.background(255);
     camera.Update();
     networkManager.Update();
-    grid1.Update();
+    
+    if (gameGrid) gameGrid.Update();
+
     
     camera.endCamera();
     chatWindow.Update();
@@ -66,39 +71,84 @@ const sketch = function(p5) {
 }
 
 
-class Grid{
-  constructor(p5, networkManager){
+
+class GameGrid{
+  constructor(p5, width, height, cellSize){
     this.p5 = p5;
-    this.networkManager = networkManager;
-
-
+    this.width = width;
+    this.height = height;
     this.grid = [];
-    
-    this.networkManager.client.socket.on('gameUpdate', (data) => {
-      this.grid = data;
-    });
 
+    this.cellSize = cellSize;
+
+    
+
+    for (let i = 0; i < height; i++){
+      this.grid.push([]);
+      for (let j = 0; j < width; j++){
+        this.grid[i].push(new Cell(p5, j * this.cellSize, i * this.cellSize, this.cellSize, this.cellSize));
+      }
+    }
+
+    this.networkManager.client.socket.on('gameUpdate', (data) => {
+      
+    });
+  }
+
+  GetCell(x, y){
+    const i = Math.floor(y / this.cellSize);
+    const j = Math.floor(x / this.cellSize);
+
+    return this.grid[i][j];
   }
 
   Update(){
-    if (this.p5.mouseIsPressed && this.p5.mouseButton === this.p5.LEFT){
-      const worldPos = camera.screenToWorld(this.p5.mouseX, this.p5.mouseY);
-      console.log(worldPos.x, worldPos.y);  
-      this.networkManager.client.socket.emit('setCell', [worldPos.x, worldPos.y]);
-    }
 
-    this.p5.push();
-    for (let i = 0; i < this.grid.length; i++){
-      for (let j = 0; j < this.grid[i].length; j++){
-        const cell = this.grid[i][j];
-        this.p5.fill(cell.live ? 0 : 255);
-        this.p5.rect(cell.x, cell.y, cell.size, cell.size);
-      }
-    }
-    this.p5.pop();
   }
   
 }
+
+class Cell{
+  constructor(p5, x, y, w, h){
+    this.p5 = p5;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+}
+
+class WallCell extends Cell{
+  constructor(p5, x, y, w, h){
+    super(p5, x, y, w, h);
+  }
+}
+
+class MoverCell extends Cell{
+  constructor(p5, x, y, w, h){
+    super(p5, x, y, w, h);
+  }
+}
+
+class RotatorCell extends Cell{
+  constructor(p5, x, y, w, h){
+    super(p5, x, y, w, h);
+  }
+}
+
+class DuplicatorCell extends Cell{
+  constructor(p5, x, y, w, h){
+    super(p5, x, y, w, h);
+  }
+}
+
+class ExlosionCell extends Cell{
+  constructor(p5, x, y, w, h){
+    super(p5, x, y, w, h);
+  }
+}
+
+
 
 
 class Client{
